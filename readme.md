@@ -17,6 +17,8 @@ For more information on how to this works with other frontends/backends, head ov
 
 > Describe the general architecture of your app here
 
+![Real World App architecture diagram](./docs/Real-World-App.svg)
+
 # Getting started
 
 > npm install, npm start, etc.
