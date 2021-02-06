@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export const Footer: React.FC = () => {
   return (
     <footer>
-      <div class="container">
+      <div className="container">
         <Link to="/" className="logo-font">
           conduit
         </Link>

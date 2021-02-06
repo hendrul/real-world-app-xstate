@@ -23,7 +23,7 @@ export const Home: React.FC = () => {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link active" href="/">
+                  <Link className="nav-link active" to="/">
                     Global Feed
                   </Link>
                 </li>
@@ -32,7 +32,7 @@ export const Home: React.FC = () => {
 
             <div className="article-preview">
               <div className="article-meta">
-                <Link href="/profile/eric">
+                <Link to="/profile/eric">
                   <img src="http://i.imgur.com/Qr71crq.jpg" />
                 </Link>
                 <div className="info">
