@@ -4,6 +4,8 @@ import { get } from "../utils/api-client";
 import { history } from "../utils/history";
 import type { UserResponse, User } from "../types/api";
 
+export type UserState = "user.unauthenticated" | "user.authenticating";
+
 type AppContext = {
   auth: ActorRefFrom<typeof authMachine> | null;
   user?: User;

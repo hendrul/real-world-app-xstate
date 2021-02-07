@@ -47,7 +47,10 @@ export const App: React.FC = () => {
       />
       <Switch>
         <Route exact={true} path="/">
-          <Home />
+          <Home
+            userState={userState || "user.unauthenticated"}
+            currentUser={current.context.user}
+          />
         </Route>
         <Route path="/register">
           <Auth authService={current.context.auth} />

@@ -1,8 +1,7 @@
 import * as React from "react";
 import { Link, NavLink } from "react-router-dom";
 import type { User } from "../types/api";
-
-export type UserState = "user.unauthenticated" | "user.authenticating";
+import type { UserState } from '../machines/app.machine';
 
 type HeaderProps =
   | {
