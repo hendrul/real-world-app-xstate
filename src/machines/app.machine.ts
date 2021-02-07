@@ -26,7 +26,37 @@ type AppEvent =
       };
     };
 
-export const appMachine = createMachine<AppContext, AppEvent>(
+export type AppState =
+  | {
+      value: "user";
+      context: {
+        auth: ActorRefFrom<typeof authMachine>;
+        user?: User;
+      };
+    }
+  | {
+      value: "user.unauthenticated";
+      context: {
+        auth: ActorRefFrom<typeof authMachine>;
+        user: undefined;
+      };
+    }
+  | {
+      value: "user.authenticated";
+      context: {
+        auth: ActorRefFrom<typeof authMachine>;
+        user: undefined;
+      };
+    }
+  | {
+      value: "user.authenticated";
+      context: {
+        auth: ActorRefFrom<typeof authMachine>;
+        user: User;
+      };
+    };
+
+export const appMachine = createMachine<AppContext, AppEvent, AppState>(
   {
     id: "app",
     type: "parallel",

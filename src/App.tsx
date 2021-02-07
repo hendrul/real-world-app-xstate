@@ -14,7 +14,9 @@ import { Settings } from "./pages/Settings";
 import { Profile } from "./pages/Profile";
 import { Article } from "./pages/Article";
 
-if (process.env.NODE_ENV !== "production") {
+const isDev = process.env.NODE_ENV !== "production";
+
+if (isDev) {
   inspect({
     iframe: false
   });
@@ -30,9 +32,9 @@ TODO:
 
 */
 export const App: React.FC = () => {
-  const [current, send] = useMachine(appMachine, { devTools: true });
+  const [current, send] = useMachine(appMachine, { devTools: isDev });
 
-  if (current.context.auth === null) return null;
+  if (current.context?.auth === null) return null;
   const userState = current
     .toStrings()
     .find(state => state.includes("user.")) as UserState | undefined;

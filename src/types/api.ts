@@ -1,3 +1,5 @@
+export type Errors = Record<string, string[]>;
+
 export interface User {
   email: string;
   token: string;
@@ -46,7 +48,7 @@ export interface APIError {
 }
 
 export interface BaseResponse {
-  errors?: Record<string, string[]>;
+  errors?: Errors;
 }
 
 export interface UserResponse extends BaseResponse {

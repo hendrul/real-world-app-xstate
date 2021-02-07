@@ -1,80 +1,8 @@
 import * as React from "react";
 import { Formik, Form, Field } from "Formik";
-import { createMachine, assign } from "xstate";
 import { useMachine } from "@xstate/react";
-import { put } from "../utils/api-client";
-import { history } from "../utils/history";
-import type { User, UserResponse } from "../types/api";
-
-const settingsMachine = createMachine(
-  {
-    id: "settings-request",
-    initial: "idle",
-    context: {
-      user: null,
-      errors: null
-    },
-    states: {
-      idle: {
-        on: {
-          SUBMIT: {
-            target: "submitting",
-            actions: "assignFormValues"
-          }
-        }
-      },
-      submitting: {
-        invoke: {
-          id: "updateUser",
-          src: "userRequest",
-          onDone: [
-            {
-              target: "success",
-              cond: "userDataExists",
-              actions: "assignData"
-            },
-            {
-              target: "failed",
-              actions: "assignErrors"
-            }
-          ],
-          onError: {
-            target: "failed",
-            actions: "assignErrors"
-          }
-        }
-      },
-      success: {
-        onEntry: ["updateParent", "goToProfile"]
-      },
-      failed: {
-        onExit: "clearErrors",
-        on: {
-          SUBMIT: {
-            target: "submitting",
-            actions: "assignFormValues"
-          }
-        }
-      }
-    }
-  },
-  {
-    actions: {
-      assignFormValues: assign({ user: (_context, event) => event.values }),
-      assignData: assign({ user: (_context, event) => event.data.user }),
-      assignErrors: assign({ errors: (_context, event) => event.data.errors }),
-      goToProfile: context =>
-        history.push(`/profile/${context.user?.username}`),
-      clearErrors: assign({ errors: null })
-    },
-    guards: {
-      userDataExists: (_context, event) => !!event.data.user
-    },
-    services: {
-      userRequest: ({ user }) => put("user", { user })
-    }
-  }
-);
+import { settingsMachine } from "../machines/settings.machine";
+import type { User } from "../types/api";
 
 type SettingsProps = {
   currentUser: User;
@@ -88,9 +16,11 @@ export const Settings: React.FC<SettingsProps> = ({
   onUpdate
 }) => {
   const [current, send] = useMachine(settingsMachine, {
-    devTools: true,
+    devTools: process.env.NODE_ENV !== 'production',
     actions: {
-      updateParent: ({ user }) => onUpdate(user)
+      updateParent: ({ user }) => {
+        if (user) onUpdate(user);
+      }
     }
   });
 
