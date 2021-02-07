@@ -65,7 +65,7 @@ export interface ArticleResponse extends BaseResponse {
 
 export interface ArticleListResponse extends BaseResponse {
   articles: Article[];
-  articleCount: number;
+  articlesCount: number;
 }
 
 export interface CommentResponse extends BaseResponse {

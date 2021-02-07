@@ -4,12 +4,19 @@ import type { Article, ArticleListResponse, Errors } from "../types/api";
 
 export type HomeContext = {
   articles?: Article[];
+  articlesCount?: number;
   errors?: Errors;
+  limit: number;
+  offset: number;
+  feed?: string;
+  author?: string;
+  tag?: string;
+  favorited?: string;
 };
 
 export type HomeEvent =
   | {
-      type: "done.invoke.getGlobalFeed" | "done.invoke.getUserFeed";
+      type: "done.invoke.getGlobalFeed";
       data: ArticleListResponse;
     }
   | {
@@ -18,6 +25,15 @@ export type HomeEvent =
     }
   | {
       type: "RETRY" | "REFRESH";
+    }
+  | {
+      type: "UPDATE_FEED";
+      offset: number;
+      limit: number;
+      feed?: string;
+      author?: string;
+      tag?: string;
+      favorited?: string;
     };
 
 export type HomeState =
@@ -25,13 +41,18 @@ export type HomeState =
       value: "loading";
       context: HomeContext & {
         articles: undefined;
+        articlesCount: undefined;
         errors: undefined;
       };
     }
   | {
-      value: "feedLoaded";
+      value:
+        | "feedLoaded"
+        | "feedLoaded.noArticles"
+        | "feedLoaded.articlesAvailable";
       context: HomeContext & {
         articles: Article[];
+        articlesCount: number;
         errors: undefined;
       };
     }
@@ -39,6 +60,7 @@ export type HomeState =
       value: "failedLoadingFeed";
       context: HomeContext & {
         articles: undefined;
+        articlesCount: undefined;
         errors: Errors;
       };
     };
@@ -47,6 +69,13 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
   {
     id: "home",
     initial: "loading",
+    context: {
+      articles: undefined,
+      articlesCount: undefined,
+      errors: undefined,
+      limit: 20,
+      offset: 0
+    },
     states: {
       loading: {
         invoke: {
@@ -64,7 +93,11 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
       },
       feedLoaded: {
         on: {
-          REFRESH: "loading"
+          REFRESH: "loading",
+          UPDATE_FEED: {
+            target: "loading",
+            actions: "updateParams"
+          }
         }
       },
       failedLoadingFeed: {
@@ -76,15 +109,14 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
   },
   {
     actions: {
-      assignData: assign({
-        articles: (context, event) => {
-          if (
-            event.type === "done.invoke.getGlobalFeed" ||
-            event.type === "done.invoke.getUserFeed"
-          )
-            return event.data.articles;
-          return context.articles;
+      assignData: assign((context, event) => {
+        if (event.type === "done.invoke.getGlobalFeed") {
+          return {
+            ...context,
+            ...event.data
+          };
         }
+        return context;
       }),
       assignErrors: assign({
         errors: (context, event) => {
@@ -92,11 +124,33 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
           return context.errors;
         }
       }),
-      clearErrors: assign<HomeContext>({ errors: undefined })
+      clearErrors: assign<HomeContext, HomeEvent>({ errors: undefined }),
+      updateParams: assign((context, event) => {
+        if (event.type === "UPDATE_FEED") {
+          return {
+            ...context,
+            ...event
+          };
+        }
+        return context;
+      })
     },
     guards: {},
     services: {
-      globalFeedRequest: () => get<ArticleListResponse>("articles")
+      globalFeedRequest: context => {
+        const params = new URLSearchParams({
+          limit: context.limit.toString(),
+          offset: context.offset.toString()
+        });
+        if (context.author) params.set("author", context.author);
+        if (context.tag) params.set("tag", context.tag);
+        if (context.favorited) params.set("favorited", context.favorited);
+
+        return get<ArticleListResponse>(
+          (context.feed === "me" ? "articles/feed?" : "articles?") +
+            params.toString()
+        );
+      }
     }
   }
 );

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/api";
 
@@ -8,12 +8,13 @@ export const ArticlePreview: React.FC<Article> = ({
   author,
   description,
   favoritesCount,
-  updatedAt
+  createdAt,
+  tagList
 }) => {
   const publishDate = new Intl.DateTimeFormat("en-US", {
     month: "long",
     day: "numeric"
-  }).format(new Date(updatedAt));
+  }).format(new Date(createdAt));
   return (
     <div className="article-preview">
       <div className="article-meta">
@@ -34,6 +35,13 @@ export const ArticlePreview: React.FC<Article> = ({
         <h1>{title}</h1>
         <p>{description}</p>
         <span>Read more...</span>
+        <ul className="tag-list">
+          {tagList.map(tag => (
+            <li key={tag} className="tag-default tag-pill tag-outline">
+              {tag}
+            </li>
+          ))}
+        </ul>
       </Link>
     </div>
   );

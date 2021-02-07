@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export const Tag: React.FC = ({ children }) => {
   return (
-    <Link to="" className="tag-pill tag-default">
+    <Link to={`?tag=${children}`} className="tag-pill tag-default">
       {children}
     </Link>
   );

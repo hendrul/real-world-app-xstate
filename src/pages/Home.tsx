@@ -2,6 +2,7 @@ import * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useMachine } from "@xstate/react";
 import { Tag } from "../components/Tag";
+import { Pagination } from "../components/Pagination";
 import { ArticlePreview } from "../components/Article";
 import { homeMachine } from "../machines/home.machine";
 import type { UserState } from "../machines/app.machine";
@@ -23,8 +24,40 @@ TODO:
 - update feed endpoint / requested data when location changes
 */
 export const Home: React.FC<HomeProps> = ({ userState }) => {
-  const [current] = useMachine(homeMachine, { devTools: true });
-  // const { search } = useLocation();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const feed = params.get("feed") ?? undefined;
+  const offset = parseInt(params.get("offset") || "0", 10);
+  const limit = parseInt(params.get("limit") || "20", 10);
+  const author = params.get("author") ?? undefined;
+  const tag = params.get("tag") ?? undefined;
+  const favorited = params.get("favorited") ?? undefined;
+
+  const [current, send] = useMachine(homeMachine, {
+    devTools: process.env.NODE_ENV !== "production",
+    context: {
+      limit,
+      offset,
+      author,
+      tag,
+      favorited,
+      feed
+    }
+  });
+
+  React.useEffect(() => {
+    if (current.matches("feedLoaded")) {
+      send({
+        type: "UPDATE_FEED",
+        offset,
+        limit,
+        feed,
+        author,
+        tag,
+        favorited
+      });
+    }
+  }, [send, offset, feed, author, tag, favorited, limit]);
 
   return (
     <div className="home-page">
@@ -46,7 +79,7 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                       activeClassName="active"
                       className="nav-link"
                       isActive={(match, location) =>
-                        !!match && location.search === "?feed=me"
+                        !!match && location.search.includes("feed=me")
                       }
                       to="/?feed=me"
                     >
@@ -59,7 +92,7 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                     activeClassName="active"
                     exact={true}
                     isActive={(match, location) =>
-                      !!match && location.search === ""
+                      !!match && !location.search.includes("feed=me")
                     }
                     className="nav-link"
                     to="/"
@@ -70,12 +103,24 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
               </ul>
             </div>
 
-            {current.matches("loading") && <p>Loading articles...</p>}
+            {current.matches("loading") && (
+              <div className="article-preview">
+                <p>Loading articles...</p>
+              </div>
+            )}
 
-            {current.matches("feedLoaded") &&
-              current.context.articles.map(article => (
-                <ArticlePreview key={article.slug} {...article} />
-              ))}
+            {current.matches("feedLoaded") && (
+              <>
+                {current.context.articles.map(article => (
+                  <ArticlePreview key={article.slug} {...article} />
+                ))}
+                <Pagination
+                  pageCount={Math.ceil(current.context.articlesCount / limit)}
+                  limit={limit}
+                  offset={offset}
+                />
+              </>
+            )}
           </div>
 
           <div className="col-md-3">
