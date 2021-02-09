@@ -46,13 +46,26 @@ export type HomeState =
       };
     }
   | {
-      value:
-        | "feedLoaded"
-        | "feedLoaded.noArticles"
-        | "feedLoaded.articlesAvailable";
+      value: "feedLoaded";
+      context: HomeContext & {
+        articles: Article[] | [];
+        articlesCount: number;
+        errors: undefined;
+      };
+    }
+  | {
+      value: { feedLoaded: "articlesAvailable" };
       context: HomeContext & {
         articles: Article[];
         articlesCount: number;
+        errors: undefined;
+      };
+    }
+  | {
+      value: { feedLoaded: "noArticles" };
+      context: HomeContext & {
+        articles: [];
+        articlesCount: 0;
         errors: undefined;
       };
     }
@@ -92,6 +105,22 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
         }
       },
       feedLoaded: {
+        initial: "pending",
+        states: {
+          pending: {
+            always: [
+              {
+                target: "noArticles",
+                cond: "dataIsEmpty"
+              },
+              {
+                target: "articlesAvailable"
+              }
+            ]
+          },
+          noArticles: {},
+          articlesAvailable: {}
+        },
         on: {
           REFRESH: "loading",
           UPDATE_FEED: {
@@ -135,7 +164,9 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
         return context;
       })
     },
-    guards: {},
+    guards: {
+      dataIsEmpty: context => context.articles?.length === 0
+    },
     services: {
       globalFeedRequest: context => {
         const params = new URLSearchParams({

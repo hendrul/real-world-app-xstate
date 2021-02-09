@@ -5,6 +5,7 @@ import { Tag } from "../components/Tag";
 import { Pagination } from "../components/Pagination";
 import { ArticlePreview } from "../components/Article";
 import { homeMachine } from "../machines/home.machine";
+import { tagsMachine } from "../machines/tags.machine";
 import type { UserState } from "../machines/app.machine";
 import type { User } from "../types/api";
 
@@ -43,6 +44,9 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
       favorited,
       feed
     }
+  });
+  const [currentTags] = useMachine(tagsMachine, {
+    devTools: process.env.NODE_ENV !== "production"
   });
 
   React.useEffect(() => {
@@ -92,7 +96,9 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                     activeClassName="active"
                     exact={true}
                     isActive={(match, location) =>
-                      !!match && !location.search.includes("feed=me")
+                      !!match &&
+                      !location.search.includes("feed=me") &&
+                      !location.search.includes("tag=")
                     }
                     className="nav-link"
                     to="/"
@@ -100,6 +106,18 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                     Global Feed
                   </NavLink>
                 </li>
+                {tag && (
+                  <li className="nav-item">
+                    <NavLink
+                      activeClassName="active"
+                      isActive={match => !!match}
+                      className="nav-link"
+                      to={`/?tag=${tag}`}
+                    >
+                      #{tag}
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             </div>
 
@@ -109,7 +127,7 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
               </div>
             )}
 
-            {current.matches("feedLoaded") && (
+            {current.matches({ feedLoaded: "articlesAvailable" }) && (
               <>
                 {current.context.articles.map(article => (
                   <ArticlePreview key={article.slug} {...article} />
@@ -121,22 +139,27 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                 />
               </>
             )}
+
+            {current.matches({ feedLoaded: "noArticles" }) && (
+              <div className="article-preview">
+                <p>No articles are here...yet</p>
+              </div>
+            )}
           </div>
 
           <div className="col-md-3">
             <div className="sidebar">
               <p>Popular Tags</p>
 
-              <div className="tag-list">
-                <Tag>programming</Tag>
-                <Tag>javascript</Tag>
-                <Tag>emberjs</Tag>
-                <Tag>angularjs</Tag>
-                <Tag>react</Tag>
-                <Tag>mean</Tag>
-                <Tag>node</Tag>
-                <Tag>rails</Tag>
-              </div>
+              {currentTags.matches("loading") && <p>Loading tags...</p>}
+
+              {currentTags.matches("tagsLoaded") && (
+                <div className="tag-list">
+                  {currentTags.context.tags.map(tag => (
+                    <Tag key={tag}>{tag}</Tag>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
