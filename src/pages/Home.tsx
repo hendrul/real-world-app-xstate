@@ -19,11 +19,6 @@ type HomeProps =
       userState: "user.authenticated";
     };
 
-/*
-TODO:
-
-- update feed endpoint / requested data when location changes
-*/
 export const Home: React.FC<HomeProps> = ({ userState }) => {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
@@ -43,6 +38,9 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
       tag,
       favorited,
       feed
+    },
+    guards: {
+      notAuthenticated: () => userState === "user.unauthenticated"
     }
   });
   const [currentTags] = useMachine(tagsMachine, {
@@ -130,7 +128,11 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
             {current.matches({ feedLoaded: "articlesAvailable" }) && (
               <>
                 {current.context.articles.map(article => (
-                  <ArticlePreview key={article.slug} {...article} />
+                  <ArticlePreview
+                    key={article.slug}
+                    {...article}
+                    onFavorite={slug => send({ type: "TOGGLE_FAVORITE", slug })}
+                  />
                 ))}
                 <Pagination
                   pageCount={Math.ceil(current.context.articlesCount / limit)}

@@ -1,6 +1,21 @@
-import { createMachine, assign } from "xstate";
-import { get } from "../utils/api-client";
-import type { Article, ArticleListResponse, Errors } from "../types/api";
+import {
+  createMachine,
+  assign,
+  actions,
+  spawn,
+  ActorRef,
+  EventObject
+} from "xstate";
+import { get, del, post } from "../utils/api-client";
+import { history } from "../utils/history";
+import type {
+  Article,
+  ArticleListResponse,
+  ArticleResponse,
+  Errors
+} from "../types/api";
+
+const { choose } = actions;
 
 export type HomeContext = {
   articles?: Article[];
@@ -12,12 +27,17 @@ export type HomeContext = {
   author?: string;
   tag?: string;
   favorited?: string;
+  favoriteRef?: ActorRef<EventObject>;
 };
 
 export type HomeEvent =
   | {
-      type: "done.invoke.getGlobalFeed";
+      type: "done.invoke.getFeed";
       data: ArticleListResponse;
+    }
+  | {
+      type: "done.invoke.favoriting";
+      data: ArticleResponse;
     }
   | {
       type: "error.platform";
@@ -34,6 +54,10 @@ export type HomeEvent =
       author?: string;
       tag?: string;
       favorited?: string;
+    }
+  | {
+      type: "TOGGLE_FAVORITE";
+      slug: string;
     };
 
 export type HomeState =
@@ -92,8 +116,8 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
     states: {
       loading: {
         invoke: {
-          id: "getGlobalFeed",
-          src: "globalFeedRequest",
+          id: "getFeed",
+          src: "feedRequest",
           onDone: {
             target: "feedLoaded",
             actions: "assignData"
@@ -126,6 +150,24 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
           UPDATE_FEED: {
             target: "loading",
             actions: "updateParams"
+          },
+          TOGGLE_FAVORITE: {
+            actions: choose([
+              {
+                cond: "notAuthenticated",
+                actions: "goToSignup"
+              },
+              {
+                cond: "articleIsFavorited",
+                actions: "deleteFavorite"
+              },
+              {
+                actions: "favoriteArticle"
+              }
+            ])
+          },
+          "done.invoke.favoriting": {
+            actions: "assignArticleData"
           }
         }
       },
@@ -138,8 +180,19 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
   },
   {
     actions: {
+      assignArticleData: assign({
+        articles: (context, event) => {
+          if (event.type === "done.invoke.favoriting") {
+            const data = event.data.article;
+            return context.articles?.map(article =>
+              article.slug === data.slug ? data : article
+            );
+          }
+          return context.articles;
+        }
+      }),
       assignData: assign((context, event) => {
-        if (event.type === "done.invoke.getGlobalFeed") {
+        if (event.type === "done.invoke.getFeed") {
           return {
             ...context,
             ...event.data
@@ -154,6 +207,56 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
         }
       }),
       clearErrors: assign<HomeContext, HomeEvent>({ errors: undefined }),
+      goToSignup: () => history.push("/register"),
+      deleteFavorite: assign((context, event) => {
+        if (event.type === "TOGGLE_FAVORITE") {
+          const articles = context.articles?.map(article => {
+            if (article.slug === event.slug) {
+              return {
+                ...article,
+                favorited: false,
+                favoritesCount: article.favoritesCount - 1
+              };
+            }
+            return article;
+          });
+          return {
+            ...context,
+            articles,
+            favoriteRef: spawn(
+              del<ArticleResponse>(`articles/${event.slug}/favorite`),
+              "favoriting"
+            )
+          };
+        }
+        return context;
+      }),
+      favoriteArticle: assign((context, event) => {
+        if (event.type === "TOGGLE_FAVORITE") {
+          const articles = context.articles?.map(article => {
+            if (article.slug === event.slug) {
+              return {
+                ...article,
+                favorited: true,
+                favoritesCount: article.favoritesCount + 1
+              };
+            }
+            return article;
+          });
+          return {
+            ...context,
+            articles,
+            favoriteRef: spawn(
+              post<ArticleResponse>(
+                `articles/${event.slug}/favorite`,
+                undefined
+              ),
+              "favoriting"
+            )
+          };
+        }
+        return context;
+      }),
       updateParams: assign((context, event) => {
         if (event.type === "UPDATE_FEED") {
           return {
@@ -165,10 +268,15 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
       })
     },
     guards: {
-      dataIsEmpty: context => context.articles?.length === 0
+      dataIsEmpty: context => context.articles?.length === 0,
+      articleIsFavorited: (context, event) =>
+        event.type === "TOGGLE_FAVORITE" &&
+        !!context.articles?.find(
+          article => article.slug === event.slug && article.favorited
+        )
     },
     services: {
-      globalFeedRequest: context => {
+      feedRequest: context => {
         const params = new URLSearchParams({
           limit: context.limit.toString(),
           offset: context.offset.toString()

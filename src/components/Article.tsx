@@ -2,14 +2,18 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/api";
 
-export const ArticlePreview: React.FC<Article> = ({
+export const ArticlePreview: React.FC<
+  Article & { onFavorite: (slug: string) => void }
+> = ({
   slug,
   title,
   author,
   description,
   favoritesCount,
+  favorited,
   createdAt,
-  tagList
+  tagList,
+  onFavorite
 }) => {
   const publishDate = new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -27,7 +31,13 @@ export const ArticlePreview: React.FC<Article> = ({
           </Link>
           <span className="date">{publishDate}</span>
         </div>
-        <button className="btn btn-outline-primary btn-sm pull-xs-right">
+        <button
+          className={`btn ${
+            favorited ? "btn-primary" : "btn-outline-primary"
+          } btn-sm pull-xs-right`}
+          type="button"
+          onClick={() => onFavorite(slug)}
+        >
           <i className="ion-heart"></i> {favoritesCount}
         </button>
       </div>

@@ -3,9 +3,9 @@ import { Router, Switch, Route } from "react-router-dom";
 import { useMachine } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 import { history } from "./utils/history";
-import { appMachine } from "./machines/app.machine";
+import { appMachine, UserState } from "./machines/app.machine";
 import type { User } from "./types/api";
-import { Header, UserState } from "./components/Header";
+import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { Home } from "./pages/Home";
 import { Auth } from "./pages/Auth";
@@ -25,7 +25,6 @@ if (isDev) {
 /*
 TODO:
 
-- feed view
 - editor view
 - article view
 - profile view
