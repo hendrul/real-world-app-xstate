@@ -27,9 +27,8 @@ TODO:
 
 - editor view
 - article view
-- profile view
-
 */
+
 export const App: React.FC = () => {
   const [current, send] = useMachine(appMachine, { devTools: isDev });
 
@@ -46,10 +45,7 @@ export const App: React.FC = () => {
       />
       <Switch>
         <Route exact={true} path="/">
-          <Home
-            userState={userState || "user.unauthenticated"}
-            currentUser={current.context.user}
-          />
+          <Home userState={userState || "user.unauthenticated"} />
         </Route>
         <Route path="/register">
           <Auth authService={current.context.auth} />
@@ -69,11 +65,11 @@ export const App: React.FC = () => {
             />
           )}
         </Route>
-        <Route path="/profile/:username">
-          <Profile />
+        <Route path="/profile/:username" exact={true}>
+          <Profile userState={userState || "user.unauthenticated"} />
         </Route>
         <Route path="/profile/:username/favorites">
-          <Profile />
+          <Profile userState={userState || "user.unauthenticated"} />
         </Route>
         <Route path="/article/:slug">
           <Article />

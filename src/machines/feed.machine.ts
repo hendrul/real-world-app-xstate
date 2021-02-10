@@ -17,20 +17,22 @@ import type {
 
 const { choose } = actions;
 
-export type HomeContext = {
+export type FeedContext = {
   articles?: Article[];
   articlesCount?: number;
   errors?: Errors;
-  limit: number;
-  offset: number;
-  feed?: string;
-  author?: string;
-  tag?: string;
-  favorited?: string;
+  params: {
+    limit: number;
+    offset: number;
+    feed?: string;
+    author?: string;
+    tag?: string;
+    favorited?: string;
+  };
   favoriteRef?: ActorRef<EventObject>;
 };
 
-export type HomeEvent =
+export type FeedEvent =
   | {
       type: "done.invoke.getFeed";
       data: ArticleListResponse;
@@ -60,10 +62,10 @@ export type HomeEvent =
       slug: string;
     };
 
-export type HomeState =
+export type FeedState =
   | {
       value: "loading";
-      context: HomeContext & {
+      context: FeedContext & {
         articles: undefined;
         articlesCount: undefined;
         errors: undefined;
@@ -71,7 +73,7 @@ export type HomeState =
     }
   | {
       value: "feedLoaded";
-      context: HomeContext & {
+      context: FeedContext & {
         articles: Article[] | [];
         articlesCount: number;
         errors: undefined;
@@ -79,7 +81,7 @@ export type HomeState =
     }
   | {
       value: { feedLoaded: "articlesAvailable" };
-      context: HomeContext & {
+      context: FeedContext & {
         articles: Article[];
         articlesCount: number;
         errors: undefined;
@@ -87,7 +89,7 @@ export type HomeState =
     }
   | {
       value: { feedLoaded: "noArticles" };
-      context: HomeContext & {
+      context: FeedContext & {
         articles: [];
         articlesCount: 0;
         errors: undefined;
@@ -95,23 +97,25 @@ export type HomeState =
     }
   | {
       value: "failedLoadingFeed";
-      context: HomeContext & {
+      context: FeedContext & {
         articles: undefined;
         articlesCount: undefined;
         errors: Errors;
       };
     };
 
-export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
+export const feedMachine = createMachine<FeedContext, FeedEvent, FeedState>(
   {
-    id: "home",
+    id: "feed-loader",
     initial: "loading",
     context: {
       articles: undefined,
       articlesCount: undefined,
       errors: undefined,
-      limit: 20,
-      offset: 0
+      params: {
+        limit: 20,
+        offset: 0
+      }
     },
     states: {
       loading: {
@@ -206,7 +210,7 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
           return context.errors;
         }
       }),
-      clearErrors: assign<HomeContext, HomeEvent>({ errors: undefined }),
+      clearErrors: assign<FeedContext, FeedEvent>({ errors: undefined }),
       goToSignup: () => history.push("/register"),
       deleteFavorite: assign((context, event) => {
         if (event.type === "TOGGLE_FAVORITE") {
@@ -261,7 +265,7 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
         if (event.type === "UPDATE_FEED") {
           return {
             ...context,
-            ...event
+            params: event
           };
         }
         return context;
@@ -278,15 +282,16 @@ export const homeMachine = createMachine<HomeContext, HomeEvent, HomeState>(
     services: {
       feedRequest: context => {
         const params = new URLSearchParams({
-          limit: context.limit.toString(),
-          offset: context.offset.toString()
+          limit: context.params.limit.toString(),
+          offset: context.params.offset.toString()
         });
-        if (context.author) params.set("author", context.author);
-        if (context.tag) params.set("tag", context.tag);
-        if (context.favorited) params.set("favorited", context.favorited);
+        if (context.params.author) params.set("author", context.params.author);
+        if (context.params.tag) params.set("tag", context.params.tag);
+        if (context.params.favorited)
+          params.set("favorited", context.params.favorited);
 
         return get<ArticleListResponse>(
-          (context.feed === "me" ? "articles/feed?" : "articles?") +
+          (context.params.feed === "me" ? "articles/feed?" : "articles?") +
             params.toString()
         );
       }

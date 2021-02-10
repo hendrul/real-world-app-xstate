@@ -4,20 +4,13 @@ import { useMachine } from "@xstate/react";
 import { Tag } from "../components/Tag";
 import { Pagination } from "../components/Pagination";
 import { ArticlePreview } from "../components/Article";
-import { homeMachine } from "../machines/home.machine";
+import { feedMachine } from "../machines/feed.machine";
 import { tagsMachine } from "../machines/tags.machine";
 import type { UserState } from "../machines/app.machine";
-import type { User } from "../types/api";
 
-type HomeProps =
-  | {
-      currentUser?: User;
-      userState: UserState;
-    }
-  | {
-      currentUser: User;
-      userState: "user.authenticated";
-    };
+type HomeProps = {
+  userState: UserState;
+};
 
 export const Home: React.FC<HomeProps> = ({ userState }) => {
   const { search } = useLocation();
@@ -29,15 +22,17 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
   const tag = params.get("tag") ?? undefined;
   const favorited = params.get("favorited") ?? undefined;
 
-  const [current, send] = useMachine(homeMachine, {
+  const [current, send] = useMachine(feedMachine, {
     devTools: process.env.NODE_ENV !== "production",
     context: {
-      limit,
-      offset,
-      author,
-      tag,
-      favorited,
-      feed
+      params: {
+        limit,
+        offset,
+        author,
+        tag,
+        favorited,
+        feed
+      }
     },
     guards: {
       notAuthenticated: () => userState === "user.unauthenticated"
