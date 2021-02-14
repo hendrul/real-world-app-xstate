@@ -1,15 +1,12 @@
 import * as React from "react";
-import { Formik, ErrorMessage, Field, Form } from "formik";
+import { Formik, Field, Form } from "formik";
 import { object, string } from "yup";
 import { Link } from "react-router-dom";
 import { ActorRefFrom } from "xstate";
 import { useActor } from "@xstate/react";
 import { authMachine } from "../machines/auth.machine";
-
-const mapErrors = (errors: Record<string, string[]>): string[] =>
-  Object.keys(errors)
-    .map(key => errors[key].map(message => [key, message].join(" ")))
-    .flat();
+import { ErrorListItem } from '../components/ErrorListItem';
+import { mapErrors } from '../utils/errors';
 
 interface SignUpValues {
   name: string;
@@ -29,10 +26,6 @@ const LogInSchema = object({
   email: string().required().email(),
   password: string().required().min(8)
 });
-
-const ErrorListItem: React.FC<{ name: string }> = ({ name }) => (
-  <ErrorMessage name={name}>{message => <li>{message}</li>}</ErrorMessage>
-);
 
 export const Auth: React.FC<{
   mode?: "signup" | "login";

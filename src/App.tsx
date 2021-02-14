@@ -53,7 +53,10 @@ export const App: React.FC = () => {
         <Route path="/login">
           <Auth key="login" mode="login" authService={current.context.auth} />
         </Route>
-        <Route path="/editor">
+        <Route path="/editor" exact={true}>
+          <Editor />
+        </Route>
+        <Route path="/editor/:slug">
           <Editor />
         </Route>
         <Route path="/settings">
