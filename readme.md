@@ -1,4 +1,4 @@
-# ![RealWorld Example App](logo.png)
+# ![RealWorld XState & React App](logo.png)
 
 > ### XState + React codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.
 
@@ -17,8 +17,29 @@ For more information on how to this works with other frontends/backends, head ov
 
 > Describe the general architecture of your app here
 
-![Real World App architecture diagram](./docs/Real-World-App.svg)
+App machine:
+![app state machine](./docs/app-machine.png)
+
+Auth machine:
+![auth state machine](./docs/auth-machine.png)
+
+Article machine:
+![article state machine](./docs/article-machine.png)
+
+Editor machine:
+![editor state machine](./docs/editor-machine.png)
+
+Feed machine:
+![feed state machine](./docs/feed-machine.png)
+
+Profile machine:
+![profile state machine](./docs/profile-machine.png)
+
+Settings machine:
+![settings state machine](./docs/settings-machine.png)
+
 
 # Getting started
 
-> npm install, npm start, etc.
+1. `npm install`
+2. `npm start`
