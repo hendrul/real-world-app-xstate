@@ -12,6 +12,10 @@ We've gone to great lengths to adhere to the **XState & React** community styleg
 
 For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
+TODO:
+
+- [ ] tests (most likely using `@xstate/test`)
+- [ ] better docs about architecture
 
 # How it works
 
