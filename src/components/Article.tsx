@@ -1,9 +1,10 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/api";
+import { AuthorCard } from "../components/AuthorCard";
 
 export const ArticlePreview: React.FC<
-  Article & { onFavorite: (slug: string) => void }
+  Article & { onFavorite: (slug?: string) => void }
 > = ({
   slug,
   title,
@@ -15,32 +16,17 @@ export const ArticlePreview: React.FC<
   tagList,
   onFavorite
 }) => {
-  const publishDate = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric"
-  }).format(new Date(createdAt));
   return (
     <div className="article-preview">
-      <div className="article-meta">
-        <Link to={`/profile/${author.username}`}>
-          <img src={author.image || ""} />
-        </Link>
-        <div className="info">
-          <Link to={`/profile/${author.username}`} className="author">
-            {author.username}
-          </Link>
-          <span className="date">{publishDate}</span>
-        </div>
-        <button
-          className={`btn ${
-            favorited ? "btn-primary" : "btn-outline-primary"
-          } btn-sm pull-xs-right`}
-          type="button"
-          onClick={() => onFavorite(slug)}
-        >
-          <i className="ion-heart"></i> {favoritesCount}
-        </button>
-      </div>
+      <AuthorCard
+        {...author}
+        slug={slug}
+        favoritesCount={favoritesCount}
+        favorited={favorited}
+        createdAt={createdAt}
+        onFavorite={onFavorite}
+        variant="preview"
+      />
       <Link to={`/article/${slug}`} className="preview-link">
         <h1>{title}</h1>
         <p>{description}</p>

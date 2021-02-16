@@ -4,7 +4,10 @@ import { get } from "../utils/api-client";
 import { history } from "../utils/history";
 import type { UserResponse, User } from "../types/api";
 
-export type UserState = "user.unauthenticated" | "user.authenticating" | "user.authenticated";
+export type UserState =
+  | "user.unauthenticated"
+  | "user.authenticating"
+  | "user.authenticated";
 
 type AppContext = {
   auth: ActorRefFrom<typeof authMachine> | null;
@@ -44,7 +47,7 @@ export type AppState =
       };
     }
   | {
-      value: "user.authenticated";
+      value: "user.authenticating";
       context: {
         auth: ActorRefFrom<typeof authMachine>;
         user: undefined;

@@ -5,8 +5,8 @@ import { Link } from "react-router-dom";
 import { ActorRefFrom } from "xstate";
 import { useActor } from "@xstate/react";
 import { authMachine } from "../machines/auth.machine";
-import { ErrorListItem } from '../components/ErrorListItem';
-import { mapErrors } from '../utils/errors';
+import { ErrorListItem } from "../components/ErrorListItem";
+import { mapErrors } from "../utils/errors";
 
 interface SignUpValues {
   name: string;

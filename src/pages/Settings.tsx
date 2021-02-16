@@ -2,6 +2,7 @@ import * as React from "react";
 import { Formik, Form, Field } from "Formik";
 import { useMachine } from "@xstate/react";
 import { settingsMachine } from "../machines/settings.machine";
+import { isProd } from "../utils/env";
 import type { User } from "../types/api";
 
 type SettingsProps = {
@@ -16,7 +17,7 @@ export const Settings: React.FC<SettingsProps> = ({
   onUpdate
 }) => {
   const [current, send] = useMachine(settingsMachine, {
-    devTools: process.env.NODE_ENV !== 'production',
+    devTools: !isProd(),
     actions: {
       updateParent: ({ user }) => {
         if (user) onUpdate(user);

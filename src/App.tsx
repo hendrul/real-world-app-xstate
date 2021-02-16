@@ -1,8 +1,9 @@
 import * as React from "react";
-import { Router, Switch, Route } from "react-router-dom";
+import { Router, Switch, Redirect, Route, RouteProps } from "react-router-dom";
 import { useMachine } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 import { history } from "./utils/history";
+import { isProd } from "./utils/env";
 import { appMachine, UserState } from "./machines/app.machine";
 import type { User } from "./types/api";
 import { Header } from "./components/Header";
@@ -14,28 +15,29 @@ import { Settings } from "./pages/Settings";
 import { Profile } from "./pages/Profile";
 import { Article } from "./pages/Article";
 
-const isDev = process.env.NODE_ENV !== "production";
-
-if (isDev) {
+if (!isProd()) {
   inspect({
     iframe: false
   });
 }
 
-/*
-TODO:
-
-- editor view
-- article view
-*/
+const AuthenticatedRoute: React.FC<
+  RouteProps & { isAuthenticated: boolean }
+> = ({ isAuthenticated, ...props }) => {
+  if (isAuthenticated) {
+    return <Route {...props} />;
+  }
+  return <Redirect to="/" />;
+};
 
 export const App: React.FC = () => {
-  const [current, send] = useMachine(appMachine, { devTools: isDev });
+  const [current, send] = useMachine(appMachine, { devTools: !isProd() });
 
   if (current.context?.auth === null) return null;
-  const userState = current
-    .toStrings()
-    .find(state => state.includes("user.")) as UserState | undefined;
+  const userState =
+    (current.toStrings().find(state => state.includes("user.")) as UserState) ||
+    "user.unauthenticated";
+  const isAuthenticated = current.matches("user.authenticated");
 
   return (
     <Router history={history}>
@@ -45,7 +47,7 @@ export const App: React.FC = () => {
       />
       <Switch>
         <Route exact={true} path="/">
-          <Home userState={userState || "user.unauthenticated"} />
+          <Home isAuthenticated={isAuthenticated} />
         </Route>
         <Route path="/register">
           <Auth authService={current.context.auth} />
@@ -53,29 +55,39 @@ export const App: React.FC = () => {
         <Route path="/login">
           <Auth key="login" mode="login" authService={current.context.auth} />
         </Route>
-        <Route path="/editor" exact={true}>
+        <AuthenticatedRoute
+          isAuthenticated={isAuthenticated}
+          path="/editor"
+          exact={true}
+        >
           <Editor />
-        </Route>
-        <Route path="/editor/:slug">
+        </AuthenticatedRoute>
+        <AuthenticatedRoute
+          isAuthenticated={isAuthenticated}
+          path="/editor/:slug"
+        >
           <Editor />
-        </Route>
-        <Route path="/settings">
-          {current.context.user && (
+        </AuthenticatedRoute>
+        <AuthenticatedRoute isAuthenticated={isAuthenticated} path="/settings">
+          {current.matches("user.authenticated") && (
             <Settings
               currentUser={current.context.user}
               onLogout={() => send({ type: "LOGGED_OUT" })}
               onUpdate={(user: User) => send({ type: "UPDATE_USER", user })}
             />
           )}
-        </Route>
+        </AuthenticatedRoute>
         <Route path="/profile/:username" exact={true}>
-          <Profile userState={userState || "user.unauthenticated"} />
+          <Profile isAuthenticated={isAuthenticated} />
         </Route>
         <Route path="/profile/:username/favorites">
-          <Profile userState={userState || "user.unauthenticated"} />
+          <Profile isAuthenticated={isAuthenticated} />
         </Route>
         <Route path="/article/:slug">
-          <Article />
+          <Article
+            currentUser={current.context.user}
+            isAuthenticated={isAuthenticated}
+          />
         </Route>
       </Switch>
       <Footer />

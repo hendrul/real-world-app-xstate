@@ -6,22 +6,17 @@ import {
   NavLink
 } from "react-router-dom";
 import { useMachine } from "@xstate/react";
+import { isProd } from "../utils/env";
 import { feedMachine } from "../machines/feed.machine";
 import { profileMachine } from "../machines/profile.machine";
-import type { UserState } from "../machines/app.machine";
 import { ArticlePreview } from "../components/Article";
 import { Pagination } from "../components/Pagination";
 
 type ProfileProps = {
-  userState: UserState;
+  isAuthenticated: boolean;
 };
 
-/*
-TODO: 
-  - add profile machine
-*/
-
-export const Profile: React.FC<ProfileProps> = ({ userState }) => {
+export const Profile: React.FC<ProfileProps> = ({ isAuthenticated }) => {
   const { username } = useParams<{ username: string }>();
   const { url } = useRouteMatch();
   const { search } = useLocation();
@@ -31,7 +26,7 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
   const showFavorites = url.includes("favorites");
 
   const [currentFeed, sendToFeed] = useMachine(feedMachine, {
-    devTools: process.env.NODE_ENV !== "production",
+    devTools: !isProd(),
     context: {
       params: {
         limit,
@@ -40,17 +35,17 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
       }
     },
     guards: {
-      notAuthenticated: () => userState === "user.unauthenticated"
+      notAuthenticated: () => !isAuthenticated
     }
   });
 
   const [current, send] = useMachine(profileMachine, {
-    devTools: process.env.NODE_ENV !== "production",
+    devTools: !isProd(),
     context: {
       profile: { username }
     },
     guards: {
-      notAuthenticated: () => userState === "user.unauthenticated"
+      notAuthenticated: () => !isAuthenticated
     }
   });
 
@@ -76,7 +71,7 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
           <div className="container">
             <div className="row">
               <div className="col-xs-12 col-md-10 offset-md-1">
-                <img src={profile.image} className="user-img" />
+                <img src={profile.image || ""} className="user-img" />
                 <h4>{profile.username}</h4>
                 <p>{profile.bio}</p>
                 <button
@@ -88,7 +83,7 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
                   onClick={() => send({ type: "TOGGLE_FOLLOWING" })}
                 >
                   <i className="ion-plus-round"></i>
-                  &nbsp; Follow {profile.username}
+                  &nbsp; Follow{profile.following && "ing"} {profile.username}
                 </button>
               </div>
             </div>
@@ -140,9 +135,11 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
                     <ArticlePreview
                       key={article.slug}
                       {...article}
-                      onFavorite={slug =>
-                        sendToFeed({ type: "TOGGLE_FAVORITE", slug })
-                      }
+                      onFavorite={slug => {
+                        if (slug) {
+                          sendToFeed({ type: "TOGGLE_FAVORITE", slug });
+                        }
+                      }}
                     />
                   ))}
                   <Pagination
@@ -160,4 +157,5 @@ export const Profile: React.FC<ProfileProps> = ({ userState }) => {
       </div>
     );
   }
+  return null;
 };

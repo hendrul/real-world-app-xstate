@@ -1,139 +1,166 @@
 import * as React from "react";
+import { Link, useParams } from "react-router-dom";
+import { useMachine } from "@xstate/react";
+import marked from "marked";
+import { sanitize } from "dompurify";
+import { articleMachine } from "../machines/article.machine";
+import type { User } from "../types/api";
+import { isProd } from "../utils/env";
+import { AuthorCard } from "../components/AuthorCard";
+import { CommentCard } from "../components/Comment";
+import { Tag } from "../components/Tag";
 
-export const Article: React.FC = () => {
+type ArticleProps = {
+  currentUser?: User;
+  isAuthenticated: boolean;
+};
+
+export const Article: React.FC<ArticleProps> = ({
+  isAuthenticated,
+  currentUser
+}) => {
+  const { slug } = useParams<{ slug: string }>();
+  const [current, send] = useMachine(articleMachine, {
+    devTools: !isProd(),
+    guards: {
+      notAuthenticated: () => !isAuthenticated
+    },
+    context: {
+      slug
+    }
+  });
+
+  const handleCommentSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const bodyEl: HTMLTextAreaElement = event.currentTarget.elements.namedItem(
+      "body"
+    ) as HTMLTextAreaElement;
+    send({
+      type: "CREATE_COMMENT",
+      comment: { body: bodyEl.value }
+    });
+    bodyEl.value = "";
+  };
+
   return (
     <div className="article-page">
-      <div className="banner">
-        <div className="container">
-          <h1>How to build webapps that scale</h1>
+      {current.matches({ article: "hasContent" }) && (
+        <>
+          <div className="banner">
+            <div className="container">
+              <h1>{current.context.article.title}</h1>
 
-          <div className="article-meta">
-            <a href="">
-              <img src="http://i.imgur.com/Qr71crq.jpg" />
-            </a>
-            <div className="info">
-              <a href="" className="author">
-                Eric Simons
-              </a>
-              <span className="date">January 20th</span>
+              <AuthorCard
+                variant={
+                  current.context.article.author.username ===
+                  currentUser?.username
+                    ? "currentAuthor"
+                    : "post"
+                }
+                {...current.context.article.author}
+                {...current.context.article}
+                onDelete={() => send({ type: "DELETE_ARTICLE" })}
+                onFavorite={() => send({ type: "TOGGLE_FAVORITE" })}
+                onFollow={() =>
+                  send({
+                    type: "TOGGLE_FOLLOW",
+                    username: current.context.article.author.username
+                  })
+                }
+              />
             </div>
-            <button className="btn btn-sm btn-outline-secondary">
-              <i className="ion-plus-round"></i>
-              &nbsp; Follow Eric Simons <span className="counter">(10)</span>
-            </button>
-            &nbsp;&nbsp;
-            <button className="btn btn-sm btn-outline-primary">
-              <i className="ion-heart"></i>
-              &nbsp; Favorite Post <span className="counter">(29)</span>
-            </button>
           </div>
-        </div>
-      </div>
 
-      <div className="container page">
-        <div className="row article-content">
-          <div className="col-md-12">
-            <p>
-              Web development technologies have evolved at an incredible clip
-              over the past few years.
-            </p>
-            <h2 id="introducing-ionic">Introducing RealWorld.</h2>
-            <p>It's a great solution for learning how other frameworks work.</p>
-          </div>
-        </div>
-
-        <hr />
-
-        <div className="article-actions">
-          <div className="article-meta">
-            <a href="profile.html">
-              <img src="http://i.imgur.com/Qr71crq.jpg" />
-            </a>
-            <div className="info">
-              <a href="" className="author">
-                Eric Simons
-              </a>
-              <span className="date">January 20th</span>
+          <div className="container page">
+            <div className="row article-content">
+              <div className="col-md-12">
+                <p>{current.context.article.description}</p>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: sanitize(marked(current.context.article.body))
+                  }}
+                />
+                <ul className="tag-list">
+                  {current.context.article.tagList.map(tag => (
+                    <Tag key={tag}>{tag}</Tag>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <button className="btn btn-sm btn-outline-secondary">
-              <i className="ion-plus-round"></i>
-              &nbsp; Follow Eric Simons <span className="counter">(10)</span>
-            </button>
-            &nbsp;
-            <button className="btn btn-sm btn-outline-primary">
-              <i className="ion-heart"></i>
-              &nbsp; Favorite Post <span className="counter">(29)</span>
-            </button>
-          </div>
-        </div>
 
-        <div className="row">
-          <div className="col-xs-12 col-md-8 offset-md-2">
-            <form className="card comment-form">
+            <hr />
+
+            <div className="article-actions">
+              <AuthorCard
+                variant={
+                  current.context.article.author.username ===
+                  currentUser?.username
+                    ? "currentAuthor"
+                    : "post"
+                }
+                {...current.context.article.author}
+                {...current.context.article}
+                onDelete={() => send({ type: "DELETE_ARTICLE" })}
+                onFavorite={() => send({ type: "TOGGLE_FAVORITE" })}
+                onFollow={() =>
+                  send({
+                    type: "TOGGLE_FOLLOW",
+                    username: current.context.article.author.username
+                  })
+                }
+              />
+            </div>
+          </div>
+        </>
+      )}
+      <div className="row">
+        <div className="col-xs-12 col-md-8 offset-md-2">
+          {isAuthenticated && (
+            <form className="card comment-form" onSubmit={handleCommentSubmit}>
               <div className="card-block">
                 <textarea
                   className="form-control"
                   placeholder="Write a comment..."
-                  rows="3"
+                  rows={3}
+                  name="body"
+                  id="body"
                 ></textarea>
               </div>
               <div className="card-footer">
                 <img
-                  src="http://i.imgur.com/Qr71crq.jpg"
+                  src={currentUser?.image || ""}
                   className="comment-author-img"
                 />
-                <button className="btn btn-sm btn-primary">Post Comment</button>
+                <button className="btn btn-sm btn-primary" type="submit">
+                  Post Comment
+                </button>
               </div>
             </form>
-
-            <div className="card">
-              <div className="card-block">
-                <p className="card-text">
-                  With supporting text below as a natural lead-in to additional
-                  content.
-                </p>
-              </div>
-              <div className="card-footer">
-                <a href="" className="comment-author">
-                  <img
-                    src="http://i.imgur.com/Qr71crq.jpg"
-                    className="comment-author-img"
-                  />
-                </a>
-                &nbsp;
-                <a href="" className="comment-author">
-                  Jacob Schmidt
-                </a>
-                <span className="date-posted">Dec 29th</span>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-block">
-                <p className="card-text">
-                  With supporting text below as a natural lead-in to additional
-                  content.
-                </p>
-              </div>
-              <div className="card-footer">
-                <a href="" className="comment-author">
-                  <img
-                    src="http://i.imgur.com/Qr71crq.jpg"
-                    className="comment-author-img"
-                  />
-                </a>
-                &nbsp;
-                <a href="" className="comment-author">
-                  Jacob Schmidt
-                </a>
-                <span className="date-posted">Dec 29th</span>
-                <span className="mod-options">
-                  <i className="ion-edit"></i>
-                  <i className="ion-trash-a"></i>
-                </span>
-              </div>
-            </div>
-          </div>
+          )}
+          {!isAuthenticated && (
+            <p>
+              <Link to="/login">Sign in</Link> or{" "}
+              <Link to="/register">sign up</Link> to add comments on this
+              article.
+            </p>
+          )}
+          {current.matches({ comments: "hasContent" }) &&
+            current.context.comments.map(comment => (
+              <CommentCard
+                key={comment.id}
+                {...comment}
+                onDelete={
+                  comment.author.username === currentUser?.username
+                    ? id => send({ type: "DELETE_COMMENT", id })
+                    : undefined
+                }
+              />
+            ))}
+          {current.matches({ comments: "noContent" }) && (
+            <p>
+              <em>No comments yet. You can be the first!</em>
+            </p>
+          )}
         </div>
       </div>
     </div>

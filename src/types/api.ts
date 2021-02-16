@@ -11,7 +11,7 @@ export interface User {
 export interface Profile {
   username: string;
   bio: string;
-  image: string;
+  image: string | null;
   following: boolean;
 }
 
@@ -27,12 +27,7 @@ export interface Article {
   updatedAt: DateTime;
   favorited: boolean;
   favoritesCount: number;
-  author: {
-    username: string;
-    bio: string;
-    image: string | null;
-    following: boolean;
-  };
+  author: Profile;
 }
 
 export interface Comment {
@@ -40,7 +35,7 @@ export interface Comment {
   createdAt: DateTime;
   updatedAt: DateTime;
   body: string;
-  author: Article["author"];
+  author: Profile;
 }
 
 export interface APIError {

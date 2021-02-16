@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { editorMachine } from "../machines/editor.machine";
 import { ErrorListItem } from "../components/ErrorListItem";
 import { mapErrors } from "../utils/errors";
+import { isProd } from "../utils/env";
 
 const EditorSchema = object({
   title: string().required(),
@@ -16,7 +17,7 @@ const EditorSchema = object({
 export const Editor: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [current, send] = useMachine(editorMachine, {
-    devTools: process.env.NODE_ENV !== "production",
+    devTools: !isProd(),
     context: {
       slug
     }

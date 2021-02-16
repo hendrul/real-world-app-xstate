@@ -1,18 +1,18 @@
 import * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useMachine } from "@xstate/react";
+import { isProd } from "../utils/env";
 import { Tag } from "../components/Tag";
 import { Pagination } from "../components/Pagination";
 import { ArticlePreview } from "../components/Article";
 import { feedMachine } from "../machines/feed.machine";
 import { tagsMachine } from "../machines/tags.machine";
-import type { UserState } from "../machines/app.machine";
 
 type HomeProps = {
-  userState: UserState;
+  isAuthenticated: boolean;
 };
 
-export const Home: React.FC<HomeProps> = ({ userState }) => {
+export const Home: React.FC<HomeProps> = ({ isAuthenticated }) => {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const feed = params.get("feed") ?? undefined;
@@ -23,7 +23,7 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
   const favorited = params.get("favorited") ?? undefined;
 
   const [current, send] = useMachine(feedMachine, {
-    devTools: process.env.NODE_ENV !== "production",
+    devTools: !isProd(),
     context: {
       params: {
         limit,
@@ -35,11 +35,11 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
       }
     },
     guards: {
-      notAuthenticated: () => userState === "user.unauthenticated"
+      notAuthenticated: () => !isAuthenticated
     }
   });
   const [currentTags] = useMachine(tagsMachine, {
-    devTools: process.env.NODE_ENV !== "production"
+    devTools: !isProd()
   });
 
   React.useEffect(() => {
@@ -70,7 +70,7 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
           <div className="col-md-9">
             <div className="feed-toggle">
               <ul className="nav nav-pills outline-active">
-                {userState === "user.authenticated" && (
+                {isAuthenticated && (
                   <li className="nav-item">
                     <NavLink
                       activeClassName="active"
@@ -126,7 +126,11 @@ export const Home: React.FC<HomeProps> = ({ userState }) => {
                   <ArticlePreview
                     key={article.slug}
                     {...article}
-                    onFavorite={slug => send({ type: "TOGGLE_FAVORITE", slug })}
+                    onFavorite={slug => {
+                      if (slug) {
+                        send({ type: "TOGGLE_FAVORITE", slug });
+                      }
+                    }}
                   />
                 ))}
                 <Pagination
