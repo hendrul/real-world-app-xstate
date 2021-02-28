@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Formik, Form, Field } from "Formik";
+import { Formik, Form, Field } from "formik";
 import { useMachine } from "@xstate/react";
 import { settingsMachine } from "../machines/settings.machine";
 import { isProd } from "../utils/env";
