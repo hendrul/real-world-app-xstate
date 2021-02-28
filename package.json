@@ -4,17 +4,14 @@
   "description": "An implementation of the Real World app with XState & React",
   "main": "index.html",
   "scripts": {
-    "build": "NODE_ENV=production parcel build index.html",
+    "build": "NODE_ENV=production parcel build *.html --out-dir _site --public-url ./",
     "start": "parcel index.html"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HipsterBrown/realworld-starter-kit.git"
   },
-  "keywords": [
-    "xstate",
-    "react"
-  ],
+  "keywords": ["xstate", "react"],
   "author": "HipsterBrown",
   "license": "Apache-2.0",
   "bugs": {
