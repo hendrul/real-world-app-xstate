@@ -14,9 +14,11 @@ jobs:
           persist-credentials: false
 
       - name: Install and Build 🔧
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
         run: |
           npm ci
-          PUBLIC_URL={{ secrets.PUBLIC_URL }} npm run build
+          npm run build
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
