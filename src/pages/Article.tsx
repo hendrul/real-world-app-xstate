@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMachine } from "@xstate/react";
-import marked from "marked";
+import { marked } from "marked";
 import { sanitize } from "dompurify";
-import { articleMachine } from "../machines/article.machine";
+import { articleMachine, articleModel } from "../machines/article.machine";
 import type { User } from "../types/api";
 import { isProd } from "../utils/env";
 import { AuthorCard } from "../components/AuthorCard";
@@ -35,10 +35,9 @@ export const Article: React.FC<ArticleProps> = ({
     const bodyEl: HTMLTextAreaElement = event.currentTarget.elements.namedItem(
       "body"
     ) as HTMLTextAreaElement;
-    send({
-      type: "CREATE_COMMENT",
-      comment: { body: bodyEl.value }
-    });
+    send(articleModel.events.createComment(
+      { body: bodyEl.value }
+    ));
     bodyEl.value = "";
   };
 
@@ -53,19 +52,16 @@ export const Article: React.FC<ArticleProps> = ({
               <AuthorCard
                 variant={
                   current.context.article.author.username ===
-                  currentUser?.username
+                    currentUser?.username
                     ? "currentAuthor"
                     : "post"
                 }
                 {...current.context.article.author}
                 {...current.context.article}
-                onDelete={() => send({ type: "DELETE_ARTICLE" })}
-                onFavorite={() => send({ type: "TOGGLE_FAVORITE" })}
+                onDelete={() => send(articleModel.events.deleteArticle())}
+                onFavorite={() => send(articleModel.events.toggleFavorite())}
                 onFollow={() =>
-                  send({
-                    type: "TOGGLE_FOLLOW",
-                    username: current.context.article.author.username
-                  })
+                  send(articleModel.events.toggleFollow(current.context.article.author.username))
                 }
               />
             </div>
@@ -94,19 +90,16 @@ export const Article: React.FC<ArticleProps> = ({
               <AuthorCard
                 variant={
                   current.context.article.author.username ===
-                  currentUser?.username
+                    currentUser?.username
                     ? "currentAuthor"
                     : "post"
                 }
                 {...current.context.article.author}
                 {...current.context.article}
-                onDelete={() => send({ type: "DELETE_ARTICLE" })}
-                onFavorite={() => send({ type: "TOGGLE_FAVORITE" })}
+                onDelete={() => send(articleModel.events.deleteArticle())}
+                onFavorite={() => send(articleModel.events.toggleFavorite())}
                 onFollow={() =>
-                  send({
-                    type: "TOGGLE_FOLLOW",
-                    username: current.context.article.author.username
-                  })
+                  send(articleModel.events.toggleFollow(current.context.article.author.username))
                 }
               />
             </div>
@@ -151,7 +144,7 @@ export const Article: React.FC<ArticleProps> = ({
                 {...comment}
                 onDelete={
                   comment.author.username === currentUser?.username
-                    ? id => send({ type: "DELETE_COMMENT", id })
+                    ? id => send(articleModel.events.deleteComment(id))
                     : undefined
                 }
               />

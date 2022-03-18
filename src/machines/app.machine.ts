@@ -1,8 +1,9 @@
-import { createMachine, spawn, assign, ActorRefFrom } from "xstate";
+import { createMachine, spawn, ActorRefFrom, EventFrom, ContextFrom } from "xstate";
 import { authMachine } from "./auth.machine";
 import { get } from "../utils/api-client";
 import { history } from "../utils/history";
-import type { UserResponse, User } from "../types/api";
+import type { ErrorsFrom, UserResponse, User } from "../types/api";
+import { createModel } from "xstate/lib/model";
 
 export type UserState =
   | "user.unauthenticated"
@@ -14,61 +15,55 @@ type AppContext = {
   user?: User;
 };
 
-type AppEvent =
-  | {
-      type: "LOGGED_IN" | "UPDATE_USER";
-      user: User;
-    }
-  | {
-      type: "done.invoke.userRequest";
-      data: UserResponse;
-    }
-  | { type: "LOGGED_OUT" }
-  | {
-      type: "error.platform";
-      data: {
-        errors: Record<string, string[]>;
-      };
-    };
+const initialContext: AppContext = {
+  auth: null,
+};
+
+export const appModel = createModel(initialContext, {
+  events: {
+    'logIn': (user: User) => ({ user }),
+    'updateUser': (user: User) => ({ user }),
+    'done.invoke.userRequest': (data: UserResponse) => ({ data }),
+    'logOut': () => ({}),
+    'error.platform': (data: ErrorsFrom<UserResponse>) => ({ data }),
+  }
+})
 
 export type AppState =
   | {
-      value: "user";
-      context: {
-        auth: ActorRefFrom<typeof authMachine>;
-        user?: User;
-      };
-    }
-  | {
-      value: "user.unauthenticated";
-      context: {
-        auth: ActorRefFrom<typeof authMachine>;
-        user: undefined;
-      };
-    }
-  | {
-      value: "user.authenticating";
-      context: {
-        auth: ActorRefFrom<typeof authMachine>;
-        user: undefined;
-      };
-    }
-  | {
-      value: "user.authenticated";
-      context: {
-        auth: ActorRefFrom<typeof authMachine>;
-        user: User;
-      };
+    value: "user";
+    context: {
+      auth: ActorRefFrom<typeof authMachine>;
+      user?: User;
     };
+  }
+  | {
+    value: "user.unauthenticated";
+    context: {
+      auth: ActorRefFrom<typeof authMachine>;
+      user: undefined;
+    };
+  }
+  | {
+    value: "user.authenticating";
+    context: {
+      auth: ActorRefFrom<typeof authMachine>;
+      user: undefined;
+    };
+  }
+  | {
+    value: "user.authenticated";
+    context: {
+      auth: ActorRefFrom<typeof authMachine>;
+      user: User;
+    };
+  };
 
-export const appMachine = createMachine<AppContext, AppEvent, AppState>(
+export const appMachine = createMachine<ContextFrom<typeof appModel>, EventFrom<typeof appModel>, AppState>(
   {
     id: "app",
     type: "parallel",
-    context: {
-      auth: null,
-      user: undefined
-    },
+    context: appModel.initialContext,
     states: {
       user: {
         onEntry: "createAuthMachine",
@@ -99,7 +94,7 @@ export const appMachine = createMachine<AppContext, AppEvent, AppState>(
           },
           authenticated: {
             on: {
-              LOGGED_OUT: {
+              logOut: {
                 actions: ["resetUserData", "resetToken", "goHome"],
                 target: "#app.user.unauthenticated"
               }
@@ -107,11 +102,11 @@ export const appMachine = createMachine<AppContext, AppEvent, AppState>(
           }
         },
         on: {
-          LOGGED_IN: {
+          logIn: {
             target: ".authenticated",
             actions: "assignUserFromEvent"
           },
-          UPDATE_USER: {
+          updateUser: {
             actions: "assignUserFromEvent"
           }
         }
@@ -120,26 +115,25 @@ export const appMachine = createMachine<AppContext, AppEvent, AppState>(
   },
   {
     actions: {
-      assignUserFromEvent: assign({
+      assignUserFromEvent: appModel.assign({
         user: (context, event) => {
-          if (event.type === "UPDATE_USER" || event.type === "LOGGED_IN") {
+          if (event.type === "updateUser" || event.type === "logIn") {
             return event.user;
           }
           return context.user;
         }
       }),
-      assignUserData: assign({
-        user: (context, event) => {
-          if (event.type === "done.invoke.userRequest") return event.data.user;
-          return context.user;
+      assignUserData: appModel.assign({
+        user: (_, event) => {
+          return event.data.user;
         }
-      }),
-      createAuthMachine: assign<AppContext, AppEvent>({
+      }, 'done.invoke.userRequest'),
+      createAuthMachine: appModel.assign({
         auth: () => spawn(authMachine) as ActorRefFrom<typeof authMachine>
       }),
       goHome: () => history.push("/"),
       resetToken: () => localStorage.removeItem("conduit_token"),
-      resetUserData: assign<AppContext, AppEvent>({ user: undefined })
+      resetUserData: appModel.assign({ user: undefined })
     },
     guards: {
       userExists: context => !!context.user,
