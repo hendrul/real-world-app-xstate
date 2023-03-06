@@ -2,8 +2,8 @@ import * as React from "react";
 import {
   useLocation,
   useParams,
-  useRouteMatch,
-  NavLink
+  NavLink,
+  useMatches
 } from "react-router-dom";
 import { useMachine } from "@xstate/react";
 import clsx from 'clsx';
@@ -17,12 +17,12 @@ import { useIsAuthenticated } from "../hooks/is-authenticated";
 export const Profile: React.FC = () => {
   const isAuthenticated = useIsAuthenticated();
   const { username } = useParams<{ username: string }>();
-  const { url } = useRouteMatch();
+  const [{ pathname }] = useMatches();
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
   const offset = parseInt(queryParams.get("offset") || "0", 10);
   const limit = parseInt(queryParams.get("limit") || "20", 10);
-  const showFavorites = url.includes("favorites");
+  const showFavorites = pathname.includes("favorites");
 
   const [currentFeed, sendToFeed] = useMachine(feedMachine, {
     devTools: !isProd(),
@@ -91,17 +91,14 @@ export const Profile: React.FC = () => {
                 <ul className="nav nav-pills outline-active">
                   <li className="nav-item">
                     <NavLink
-                      activeClassName="active"
                       className="nav-link"
                       to={`/profile/${username}`}
-                      exact={true}
                     >
                       My Articles
                     </NavLink>
                   </li>
                   <li className="nav-item">
                     <NavLink
-                      activeClassName="active"
                       className="nav-link"
                       to={`/profile/${username}/favorites`}
                     >
