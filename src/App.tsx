@@ -1,96 +1,75 @@
 import * as React from "react";
-import { Router, Switch, Redirect, Route, RouteProps } from "react-router-dom";
-import { useMachine } from "@xstate/react";
+import { Route, Navigate, createBrowserRouter, RouterProvider, createRoutesFromElements } from "react-router-dom";
+import { createActorContext } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
-import { history } from "./utils/history";
 import { isProd } from "./utils/env";
-import { appMachine, UserState, appModel } from "./machines/app.machine";
-import type { User } from "./types/api";
-import { Header } from "./components/Header";
-import { Footer } from "./components/Footer";
+import { appMachine } from "./machines/app.machine";
 import { Home } from "./pages/Home";
 import { Auth } from "./pages/Auth";
 import { Editor } from "./pages/Editor";
 import { Settings } from "./pages/Settings";
 import { Profile } from "./pages/Profile";
 import { Article } from "./pages/Article";
+import { AppLayout } from "./components/AppLayout";
+import { useIsAuthenticated } from "./hooks/is-authenticated";
 
 if (!isProd()) {
   inspect({
     iframe: false
   });
 }
+export const AppMachineContext = createActorContext(appMachine, { devTools: !isProd() });
+const basename = isProd() ? String(process.env.PUBLIC_URL) : '/';
 
 const AuthenticatedRoute: React.FC<
-  RouteProps & { isAuthenticated: boolean }
-> = ({ isAuthenticated, ...props }) => {
+  { element: React.ReactElement }
+> = ({ element }) => {
+  const isAuthenticated = useIsAuthenticated();
+
   if (isAuthenticated) {
-    return <Route {...props} />;
+    return element;
   }
-  return <Redirect to="/" />;
+  return <Navigate to="/" replace={true} />;
 };
 
+export const appRouter = createBrowserRouter(createRoutesFromElements(
+  <Route element={<AppLayout />} >
+    <Route path="/" element={<Home />} />
+    <Route path="/register" element={<Auth />} />
+    <Route path="/login" element={<Auth key="login" mode="login" />} />
+    <Route
+      path="/editor"
+      element={
+        <AuthenticatedRoute
+          element={<Editor />}
+        />
+      }
+    />
+    <Route path="/editor/:slug"
+      element={
+        <AuthenticatedRoute
+          element={<Editor />}
+        />
+      }
+    />
+    <Route path="/settings"
+      element={
+        <AuthenticatedRoute
+          element={<Settings />}
+        />
+      }
+    />
+    <Route path="/profile/:username" element={<Profile />} />
+    <Route path="/profile/:username/favorites" element={<Profile />} />
+    <Route path="/article/:slug" element={<Article />} />
+  </Route>
+), { basename })
+
+
 export const App: React.FC = () => {
-  const [current, send] = useMachine(appMachine, { devTools: !isProd() });
-
-  if (current.context?.auth === null) return null;
-  const userState =
-    (current.toStrings().find(state => state.includes("user.")) as UserState) ||
-    "user.unauthenticated";
-  const isAuthenticated = current.matches("user.authenticated");
-
   return (
-    <Router history={history}>
-      <Header
-        userState={userState || "user.unauthenticated"}
-        currentUser={current.context.user}
-      />
-      <Switch>
-        <Route exact={true} path="/">
-          <Home isAuthenticated={isAuthenticated} />
-        </Route>
-        <Route path="/register">
-          <Auth authService={current.context.auth} />
-        </Route>
-        <Route path="/login">
-          <Auth key="login" mode="login" authService={current.context.auth} />
-        </Route>
-        <AuthenticatedRoute
-          isAuthenticated={isAuthenticated}
-          path="/editor"
-          exact={true}
-        >
-          <Editor />
-        </AuthenticatedRoute>
-        <AuthenticatedRoute
-          isAuthenticated={isAuthenticated}
-          path="/editor/:slug"
-        >
-          <Editor />
-        </AuthenticatedRoute>
-        <AuthenticatedRoute isAuthenticated={isAuthenticated} path="/settings">
-          {current.matches("user.authenticated") && (
-            <Settings
-              currentUser={current.context.user}
-              onLogout={() => send(appModel.events.logOut())}
-              onUpdate={(user: User) => send(appModel.events.updateUser(user))}
-            />
-          )}
-        </AuthenticatedRoute>
-        <Route path="/profile/:username" exact={true}>
-          <Profile isAuthenticated={isAuthenticated} />
-        </Route>
-        <Route path="/profile/:username/favorites">
-          <Profile isAuthenticated={isAuthenticated} />
-        </Route>
-        <Route path="/article/:slug">
-          <Article
-            currentUser={current.context.user}
-            isAuthenticated={isAuthenticated}
-          />
-        </Route>
-      </Switch>
-      <Footer />
-    </Router>
+    <AppMachineContext.Provider>
+      <RouterProvider router={appRouter} />
+    </AppMachineContext.Provider>
   );
 };

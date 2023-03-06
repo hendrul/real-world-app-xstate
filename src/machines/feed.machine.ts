@@ -9,7 +9,7 @@ import {
 } from "xstate";
 import { createModel } from 'xstate/lib/model';
 import { get, del, post } from "../utils/api-client";
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import type {
   Article,
   ArticleListResponse,
@@ -191,7 +191,7 @@ export const feedMachine = createMachine<ContextFrom<typeof feedModel>, EventFro
         }
       }, 'error.platform'),
       clearErrors: feedModel.assign({ errors: undefined }),
-      goToSignup: () => history.push("/register"),
+      goToSignup: () => appRouter.navigate("/register"),
       deleteFavorite: feedModel.assign((context, event) => {
         const articles = context.articles?.map(article => {
           if (article.slug === event.slug) {

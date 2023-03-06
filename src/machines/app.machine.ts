@@ -1,7 +1,7 @@
 import { createMachine, spawn, ActorRefFrom, EventFrom, ContextFrom } from "xstate";
 import { authMachine } from "./auth.machine";
 import { get } from "../utils/api-client";
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import type { ErrorsFrom, UserResponse, User } from "../types/api";
 import { createModel } from "xstate/lib/model";
 
@@ -131,7 +131,7 @@ export const appMachine = createMachine<ContextFrom<typeof appModel>, EventFrom<
       createAuthMachine: appModel.assign({
         auth: () => spawn(authMachine) as ActorRefFrom<typeof authMachine>
       }),
-      goHome: () => history.push("/"),
+      goHome: () => appRouter.navigate('/'),
       resetToken: () => localStorage.removeItem("conduit_token"),
       resetUserData: appModel.assign({ user: undefined })
     },

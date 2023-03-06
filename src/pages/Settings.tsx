@@ -4,18 +4,14 @@ import { useMachine } from "@xstate/react";
 import { settingsMachine, settingsModel } from "../machines/settings.machine";
 import { isProd } from "../utils/env";
 import type { User } from "../types/api";
+import { AppMachineContext } from "../App";
+import { appModel } from "../machines/app.machine";
 
-type SettingsProps = {
-  currentUser: User;
-  onLogout: () => void;
-  onUpdate: (user: User) => void;
-};
-
-export const Settings: React.FC<SettingsProps> = ({
-  currentUser,
-  onLogout,
-  onUpdate
-}) => {
+export const Settings: React.FC = () => {
+  const [appState, sendToApp] = AppMachineContext.useActor();
+  const currentUser = appState.context.user!;
+  const onLogout = () => sendToApp(appModel.events.logOut())
+  const onUpdate = (user: User) => sendToApp(appModel.events.updateUser(user))
   const [current, send] = useMachine(settingsMachine, {
     devTools: !isProd(),
     actions: {

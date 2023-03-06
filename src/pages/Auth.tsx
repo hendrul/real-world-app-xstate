@@ -2,11 +2,11 @@ import * as React from "react";
 import { Formik, Field, Form } from "formik";
 import { object, string } from "yup";
 import { Link } from "react-router-dom";
-import { ActorRefFrom } from "xstate";
 import { useActor } from "@xstate/react";
-import { authMachine, authModel } from "../machines/auth.machine";
+import { authModel } from "../machines/auth.machine";
 import { ErrorListItem } from "../components/ErrorListItem";
 import { mapErrors } from "../utils/errors";
+import { AppMachineContext } from "../App";
 
 interface SignUpValues {
   name: string;
@@ -29,8 +29,8 @@ const LogInSchema = object({
 
 export const Auth: React.FC<{
   mode?: "signup" | "login";
-  authService: ActorRefFrom<typeof authMachine>;
-}> = ({ mode = "signup", authService }) => {
+}> = ({ mode = "signup" }) => {
+  const authService = AppMachineContext.useSelector(state => state.context.auth);
   const [current, send] = useActor(authService);
 
   return (

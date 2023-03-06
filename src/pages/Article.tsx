@@ -4,21 +4,16 @@ import { useMachine } from "@xstate/react";
 import { marked } from "marked";
 import { sanitize } from "dompurify";
 import { articleMachine, articleModel } from "../machines/article.machine";
-import type { User } from "../types/api";
 import { isProd } from "../utils/env";
 import { AuthorCard } from "../components/AuthorCard";
 import { CommentCard } from "../components/Comment";
 import { Tag } from "../components/Tag";
+import { useIsAuthenticated } from "../hooks/is-authenticated";
+import { AppMachineContext } from "../App";
 
-type ArticleProps = {
-  currentUser?: User;
-  isAuthenticated: boolean;
-};
-
-export const Article: React.FC<ArticleProps> = ({
-  isAuthenticated,
-  currentUser
-}) => {
+export const Article: React.FC = () => {
+  const isAuthenticated = useIsAuthenticated();
+  const currentUser = AppMachineContext.useSelector(state => state.context.user);
   const { slug } = useParams<{ slug: string }>();
   const [current, send] = useMachine(articleMachine, {
     devTools: !isProd(),

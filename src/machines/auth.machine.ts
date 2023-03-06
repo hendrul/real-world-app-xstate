@@ -1,5 +1,5 @@
 import { createMachine, sendParent, EventFrom, ContextFrom } from "xstate";
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import { post } from "../utils/api-client";
 import type { ErrorsFrom, UserResponse } from "../types/api";
 import { createModel } from "xstate/lib/model";
@@ -181,7 +181,7 @@ export const authMachine = createMachine<ContextFrom<typeof authModel>, EventFro
           return context.errors;
         }
       }),
-      navigateHome: () => history.push("/"),
+      navigateHome: () => appRouter.navigate("/"),
       notifyParent: sendParent((_context, event) => {
         if (
           event.type === "done.invoke.loginUser" ||

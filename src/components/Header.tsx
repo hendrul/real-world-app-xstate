@@ -24,8 +24,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
           <li className="nav-item">
             <NavLink
               className="nav-link"
-              exact={true}
-              activeClassName="active"
               to="/"
             >
               Home
@@ -41,7 +39,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  activeClassName="active"
                   to="/editor"
                 >
                   <i className="ion-compose"></i>&nbsp;New Post
@@ -50,7 +47,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  activeClassName="active"
                   to="/settings"
                 >
                   <i className="ion-gear-a"></i>&nbsp;Settings
@@ -59,7 +55,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  activeClassName="active"
                   to={`/profile/${currentUser?.username}`}
                 >
                   {currentUser?.username}
@@ -72,7 +67,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  activeClassName="active"
                   to="/login"
                 >
                   Sign in
@@ -81,7 +75,6 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, userState }) => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  activeClassName="active"
                   to="/register"
                 >
                   Sign up

@@ -12,12 +12,10 @@ import { feedMachine, feedModel } from "../machines/feed.machine";
 import { profileMachine, profileModel } from "../machines/profile.machine";
 import { ArticlePreview } from "../components/Article";
 import { Pagination } from "../components/Pagination";
+import { useIsAuthenticated } from "../hooks/is-authenticated";
 
-type ProfileProps = {
-  isAuthenticated: boolean;
-};
-
-export const Profile: React.FC<ProfileProps> = ({ isAuthenticated }) => {
+export const Profile: React.FC = () => {
+  const isAuthenticated = useIsAuthenticated();
   const { username } = useParams<{ username: string }>();
   const { url } = useRouteMatch();
   const { search } = useLocation();

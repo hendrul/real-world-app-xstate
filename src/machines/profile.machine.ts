@@ -8,7 +8,7 @@ import {
   ContextFrom,
 } from "xstate";
 import { createModel } from 'xstate/lib/model';
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import { get, post, del } from "../utils/api-client";
 import type { Profile, ProfileResponse, Errors, ErrorsFrom } from "../types/api";
 
@@ -138,7 +138,7 @@ export const profileMachine = createMachine<
           )
         };
       }, 'toggleFollowing'),
-      goToSignup: () => history.push("/register"),
+      goToSignup: () => appRouter.navigate("/register"),
       unfollowProfile: profileModel.assign(context => {
         const { profile } = context;
         return {

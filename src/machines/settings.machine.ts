@@ -1,6 +1,6 @@
 import { createMachine, ContextFrom, EventFrom } from "xstate";
 import { createModel } from 'xstate/lib/model'
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import { put } from "../utils/api-client";
 import type { User, UserResponse, Errors, ErrorsFrom } from "../types/api";
 
@@ -95,7 +95,7 @@ export const settingsMachine = createMachine<ContextFrom<typeof settingsModel>, 
         errors: (_, event) => event.data.errors,
       }, 'error.platform.updateUser'),
       goToProfile: context =>
-        history.push(`/profile/${context.user?.username}`),
+        appRouter.navigate(`/profile/${context.user?.username}`),
       clearErrors: settingsModel.assign({ errors: null })
     },
     services: {

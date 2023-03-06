@@ -7,12 +7,11 @@ import { Pagination } from "../components/Pagination";
 import { ArticlePreview } from "../components/Article";
 import { feedMachine, feedModel } from "../machines/feed.machine";
 import { tagsMachine } from "../machines/tags.machine";
+import { useIsAuthenticated } from "../hooks/is-authenticated";
+import clsx from "clsx";
 
-type HomeProps = {
-  isAuthenticated: boolean;
-};
-
-export const Home: React.FC<HomeProps> = ({ isAuthenticated }) => {
+export const Home: React.FC = () => {
+  const isAuthenticated = useIsAuthenticated();
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const feed = params.get("feed") ?? undefined;
@@ -72,11 +71,7 @@ export const Home: React.FC<HomeProps> = ({ isAuthenticated }) => {
                 {isAuthenticated && (
                   <li className="nav-item">
                     <NavLink
-                      activeClassName="active"
-                      className="nav-link"
-                      isActive={(match, location) =>
-                        !!match && location.search.includes("feed=me")
-                      }
+                      className={({ isActive }) => clsx('nav-link', { active: isActive && search.includes('feed=me') })}
                       to="/?feed=me"
                     >
                       Your Feed
@@ -85,14 +80,7 @@ export const Home: React.FC<HomeProps> = ({ isAuthenticated }) => {
                 )}
                 <li className="nav-item">
                   <NavLink
-                    activeClassName="active"
-                    exact={true}
-                    isActive={(match, location) =>
-                      !!match &&
-                      !location.search.includes("feed=me") &&
-                      !location.search.includes("tag=")
-                    }
-                    className="nav-link"
+                    className={({ isActive }) => clsx('nav-link', { active: isActive && !search.includes("feed=me") && !search.includes("tag=") })}
                     to="/"
                   >
                     Global Feed
@@ -101,8 +89,6 @@ export const Home: React.FC<HomeProps> = ({ isAuthenticated }) => {
                 {tag && (
                   <li className="nav-item">
                     <NavLink
-                      activeClassName="active"
-                      isActive={match => !!match}
                       className="nav-link"
                       to={`/?tag=${tag}`}
                     >

@@ -1,7 +1,7 @@
 import { createMachine, EventFrom, ContextFrom } from "xstate";
 import { createModel } from 'xstate/lib/model';
 import { get, post, put } from "../utils/api-client";
-import { history } from "../utils/history";
+import { appRouter } from "../App";
 import type { ArticleResponse, Article, Errors, ErrorsFrom } from "../types/api";
 
 export type FormValues = Pick<
@@ -197,7 +197,7 @@ export const editorMachine = createMachine<
           return event.values;
         }
       }, 'submit'),
-      goToArticle: context => history.push(`/article/${context.article?.slug}`)
+      goToArticle: context => appRouter.navigate(`/article/${context.article?.slug}`)
     },
     guards: {
       slugExists: context => !!context.slug

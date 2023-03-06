@@ -8,7 +8,7 @@ import {
   ContextFrom,
 } from "xstate";
 import { get, post, del } from "../utils/api-client";
-import { history } from "../utils/history";
+import { appRouter } from '../App';
 import type {
   ArticleResponse,
   Article,
@@ -215,8 +215,8 @@ export const articleMachine =
             return event.data.comments;
           }
         }, 'done.invoke.getComments'),
-        goToSignup: () => history.push("/register"),
-        goHome: () => history.push("/"),
+        goToSignup: () => appRouter.navigate("/register"),
+        goHome: () => appRouter.navigate("/"),
         deleteArticle: articleModel.assign({
           deletingRef: context =>
             spawn(del(`articles/${context.slug}`), "deletingArticle")
